@@ -35,7 +35,7 @@ int main(int argc, const char *argv[])
 
     int i=0; 
     for(i=1;i<65;i++){
-        data[i-1]=i+2;
+        data[i-1]=i+200;
     }
 
     ret = i2c_write_64(0x09, data);

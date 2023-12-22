@@ -11,6 +11,7 @@
 #include "i2c/smbus.h"
 /*--------------------------------------------------------------------------*/
 // https://www.kernel.org/doc/html/v5.5/i2c/smbus-protocol.html
+// https://www.kernel.org/doc/Documentation/i2c/i2c-protocol
 /*--------------------------------------------------------------------------*/
 
 #define I2C_BUS "/dev/i2c-4"
@@ -72,7 +73,7 @@ int i2c_read(uint8_t reg, uint8_t len, uint8_t *data)
     messages[0].buf = &reg;
 
     messages[1].addr = I2C_ADDRESS;
-    messages[1].flags = I2C_M_RD; // Read operation
+    messages[1].flags = I2C_M_RD | I2C_M_NOSTART; // Read operation
     messages[1].len = len + 1;
     messages[1].buf = buff;
 
@@ -107,39 +108,23 @@ int i2c_write(uint8_t reg, uint8_t len, uint8_t *data)
 /*--------------------------------------------------------------------------*/
 int i2c_write_64(uint8_t reg, uint8_t *data)
 {
-    uint8_t buff0[2];
-    uint8_t buff1[32];
-    uint8_t buff2[32];
-    struct i2c_msg messages[3];
+    uint8_t buff0[66];
+    struct i2c_msg messages[4];
 
     memset(buff0, 0, sizeof(buff0));
-    memset(buff1, 0, sizeof(buff1));
-    memset(buff2, 0, sizeof(buff2));
-
     buff0[0] = reg;
     buff0[1] = 64;
-    memcpy(buff1, data, 32);
-    memcpy(buff2, data + 32, 32);
+    memcpy(&buff0[2], data, 64);
 
     messages[0].addr = I2C_ADDRESS;
-    messages[0].flags = 0; // Write operation
-    messages[0].len = 2;
+    messages[0].flags = 0; // Write operation without repeated start
+    messages[0].len = 66;
     messages[0].buf = buff0;
-
-    messages[1].addr = I2C_ADDRESS;
-    messages[1].flags = 0; // Write operation without repeated start
-    messages[1].len = 32;
-    messages[1].buf = buff2;
-
-    messages[2].addr = I2C_ADDRESS;
-    messages[2].flags = 0; // Write operation without repeated start
-    messages[2].len = 32;
-    messages[2].buf = buff1;
 
     // Execute the read transaction
     struct i2c_rdwr_ioctl_data transaction;
     transaction.msgs = messages;
-    transaction.nmsgs = 3;
+    transaction.nmsgs = 1;
 
     if (ioctl(i2c_file, I2C_RDWR, &transaction) < 0)
     {
@@ -168,17 +153,17 @@ int i2c_read_64(uint8_t reg, uint8_t *data)
     messages[0].buf = &reg;
 
     messages[1].addr = I2C_ADDRESS;
-    messages[1].flags = I2C_M_RD; // Write operation
+    messages[1].flags = I2C_M_RD | I2C_M_NOSTART; // Write operation
     messages[1].len = 1;
     messages[1].buf = &buff0;
 
     messages[2].addr = I2C_ADDRESS;
-    messages[2].flags = I2C_M_RD; // Read operation
+    messages[2].flags = I2C_M_RD | I2C_M_NOSTART; // Read operation
     messages[2].len = 32;
     messages[2].buf = buff1;
 
     messages[3].addr = I2C_ADDRESS;
-    messages[3].flags = I2C_M_RD; // Read operation
+    messages[3].flags = I2C_M_RD | I2C_M_NOSTART; // Read operation
     messages[3].len = 32;
     messages[3].buf = buff2;
 
