@@ -19,6 +19,8 @@ sudo i2cget -f -y 4 0x22 0
 int main(int argc, const char *argv[])
 {
     int ret;
+    uint8_t value;
+    uint8_t data[10];
 
     printf("hello\n");
 
@@ -28,8 +30,11 @@ int main(int argc, const char *argv[])
         exit(1);
     }
 
-    ret = i2c_read(0);
-    printf("i2c add 0:%02x\n",ret);
+    // ret = i2c_read(0, &value);
+    // printf("i2c add 0:%02x\n",value);
 
+    ret = i2c_read(1, 4, data);
+    ret = i2c_read(3, 4, data);
+    ret = i2c_read(4, 4, data);
 }
 /*--------------------------------------------------------------------------*/

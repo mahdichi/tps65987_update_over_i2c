@@ -12,8 +12,6 @@ typedef struct {
 } s_AppContext;
 
 
-
-
 static int32_t PreOpsForFlashUpdate()
 {
     s_AppContext *const pCtx = &gAppCtx;

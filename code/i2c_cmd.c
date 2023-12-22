@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
+
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -10,7 +12,7 @@
 #include "i2c/smbus.h"
 /*--------------------------------------------------------------------------*/
 #define I2C_BUS "/dev/i2c-4"
-#define TPS_I2C_ADDR 0x22
+#define I2C_ADDRESS 0x22
 /*--------------------------------------------------------------------------*/
 int i2c_file;
 /*--------------------------------------------------------------------------*/
@@ -18,7 +20,7 @@ int i2c_open(void)
 {
 	/* got these values from i2cdetect */
 	const char *i2c_device = I2C_BUS;
-	const int device_address = TPS_I2C_ADDR;
+	const int device_address = I2C_ADDRESS;
 
 	/* open the i2c device file */
 	i2c_file = open(i2c_device, O_RDWR);
@@ -36,16 +38,51 @@ int i2c_open(void)
 	}
 }
 /*--------------------------------------------------------------------------*/
-int i2c_read(uint8_t addr)
-{
-	int res = i2c_smbus_read_byte_data(i2c_file, addr);
+// int i2c_read(uint8_t addr, uint8_t* value)
+// {
+// 	int res = i2c_smbus_read_byte_data(i2c_file, addr);
 
-	if (res < 0)
-	{
-		printf("i2c_read error \n");
-		return -1;	
-	}
+// 	if (res < 0)
+// 	{
+// 		printf("i2c_read error \n");
+// 		return -1;	
+// 	}
 	
-	return res;
+// 	*value = res;
+// 	return 0;
+// }
+/*--------------------------------------------------------------------------*/
+int i2c_read(uint8_t reg, uint8_t len, uint8_t* data)
+{
+    uint8_t buff[10];
+	struct i2c_msg messages[2];
+
+    memset(data, 0, len+1);
+
+
+
+    messages[0].addr = I2C_ADDRESS;
+    messages[0].flags = 0;                      // Write operation
+    messages[0].len = 1;
+    messages[0].buf = &reg;
+
+    messages[1].addr = I2C_ADDRESS;
+    messages[1].flags = I2C_M_RD;              // Read operation
+    messages[1].len = len+1;
+    messages[1].buf = buff;
+
+    // Execute the read transaction
+    struct i2c_rdwr_ioctl_data transaction;
+    transaction.msgs = messages;
+    transaction.nmsgs = 2;
+
+    if (ioctl(i2c_file, I2C_RDWR, &transaction) < 0) {
+        perror("Failed to perform read operation");
+        return -1;
+    }
+
+    memcpy(data,buff+1,len);
+
+    return 0;
 }
 /*--------------------------------------------------------------------------*/
