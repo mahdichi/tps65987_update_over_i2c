@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cmake",
+            "request": "launch",
+            "name": "CMake script debugging",
+            "cmakeDebugType": "script",
+            "scriptPath": "${workspaceFolder}/<script>.cmake"
+        },
+        {
+            "type": "cmake",
+            "request": "launch",
+            "name": "Debug externally launched CMake process",
+            "cmakeDebugType": "external",
+            "pipeName": "<insert-pipe-name>"
+        }
+    ]
+}
