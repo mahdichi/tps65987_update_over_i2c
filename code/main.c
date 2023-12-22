@@ -21,6 +21,7 @@ int main(int argc, const char *argv[])
     int ret;
     uint8_t value;
     uint8_t data[65];
+    uint8_t data[65];
 
     printf("hello\n");
 
@@ -43,6 +44,12 @@ int main(int argc, const char *argv[])
     ret = i2c_read(1, 4, data);
     ret = i2c_read(3, 4, data);
     ret = i2c_read(4, 4, data);
+    ret = i2c_read(0x0F, 4, data);
+
+    ret = i2c_read_64(0x09, data);
+
+
+    i2c_close();
     ret = i2c_read(0x0F, 4, data);
 
     ret = i2c_read_64(0x09, data);
