@@ -7,6 +7,7 @@ enable_testing()
 add_executable(tps_flasher 
     main.c
     i2c_cmd.c
+    tps65987d_flash.c
 )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

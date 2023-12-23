@@ -1,6 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
-
+#include <string.h>
+#include <unistd.h>
 #include "i2c_cmd.h"
 /*--------------------------------------------------------------------------*/
 // Provides details on PD Controller boot flags and silicon revision.
@@ -70,7 +73,7 @@ typedef struct
 
     uint32_t REV_ID_Metal : 4; // Bit 3:0
     uint32_t REV_ID_Base : 4;  // Bit 7:4
-    uint32_t reserved5 : 24;   // Bit 31:8
+    uint32_t reserved6 : 24;   // Bit 31:8
 
     uint32_t REV_ID_REG0 : 32; // Bit 31:0
     uint32_t REV_ID_REG1 : 32; // Bit 31:0
@@ -136,9 +139,12 @@ typedef struct
 } s_AppContext;
 s_AppContext gAppCtx;
 /*--------------------------------------------------------------------------*/
-static UpdateAndVerifyRegion(uint8_t region_number);
+int UpdateAndVerifyRegion(uint8_t region_number);
 /*--------------------------------------------------------------------------*/
-static int32_t PreOpsForFlashUpdate()
+uint8_t tps6598x_lowregion_array[4*1024*1000];
+#define TOTAL_4kBSECTORS_FOR_PATCH  10
+/*--------------------------------------------------------------------------*/
+int PreOpsForFlashUpdate()
 {
     s_AppContext *const pCtx = &gAppCtx;
     s_TPS_bootflag *p_bootflags = NULL;
@@ -314,7 +320,7 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
     return 0;
 }
 /*--------------------------------------------------------------------------*/
-static UpdateAndVerifyRegion(uint8_t region_number)
+int UpdateAndVerifyRegion(uint8_t region_number)
 {
     s_TPS_flrr flrrInData = {0};
     s_TPS_flem flemInData = {0};
@@ -360,7 +366,7 @@ static UpdateAndVerifyRegion(uint8_t region_number)
     for (idx = 0; idx < patchBundleSize / PATCH_BUNDLE_SIZE; idx++)
     {
 
-        UART_PRINT(".");
+        printf(".");
         /*
          * Execute FLwd with PATCH_BUNDLE_SIZE bytes of patch-data
          * in each iteration
@@ -427,4 +433,26 @@ static int32_t ResetPDController()
     return 0;
 }
 /*--------------------------------------------------------------------------*/
+extern char file_name[256];
+
+int tps_main(void){
+    FILE *file;
+    char *buffer;
+    long file_size;
+
+    // Open the binary file in binary read mode
+    file = fopen(file_name, "rb");
+
+    if (file == NULL) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    // Get the file size
+    fseek(file, 0, SEEK_END);
+    file_size = ftell(file);
+    rewind(file);
+
+
+}
 /*--------------------------------------------------------------------------*/
