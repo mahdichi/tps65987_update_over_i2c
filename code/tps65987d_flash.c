@@ -92,6 +92,22 @@ typedef struct
 
 typedef struct
 {
+    uint32_t flashaddr : 32; // Bit 31:0
+    uint32_t numof4ksector : 8; // Bit 7:0
+} s_TPS_flem;
+
+typedef struct
+{
+    uint32_t flashaddr : 32; // Bit 31:0
+} s_TPS_flad;
+
+typedef struct
+{
+    uint32_t flashaddr : 32; // Bit 31:0
+} s_TPS_flvy;
+
+typedef struct
+{
     uint8_t active_region;
     uint8_t inactive_region;
 } s_AppContext;
@@ -220,6 +236,14 @@ error:
 /**/
 
 #define FLrr 0
+#define FLem 1
+#define FLad 2
+#define FLwd 3
+#define FLvy 4
+
+#define OUTPUT_LEN_FLRR 4
+#define TASK_RET_CODE_LEN   1
+#define PATCH_BUNDLE_SIZE   64
 
 int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_size, uint8_t *outdata)
 {
@@ -239,6 +263,34 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
         fourCCcmd[2] = 'r';
         fourCCcmd[3] = 'r';
     }
+    else if (cmd == FLem)
+    {
+        fourCCcmd[0] = 'F';
+        fourCCcmd[1] = 'L';
+        fourCCcmd[2] = 'e';
+        fourCCcmd[3] = 'm';
+    }
+    else if (cmd == FLad)
+    {
+        fourCCcmd[0] = 'F';
+        fourCCcmd[1] = 'L';
+        fourCCcmd[2] = 'a';
+        fourCCcmd[3] = 'd';
+    }    
+    else if (cmd == FLwd)
+    {
+        fourCCcmd[0] = 'F';
+        fourCCcmd[1] = 'L';
+        fourCCcmd[2] = 'w';
+        fourCCcmd[3] = 'd';
+    }
+    else if (cmd == FLvy)
+    {
+        fourCCcmd[0] = 'F';
+        fourCCcmd[1] = 'L';
+        fourCCcmd[2] = 'v';
+        fourCCcmd[3] = 'y';
+    }    
     retVal = i2c_write(REG_ADDR_CMD1, 4, fourCCcmd);
     RETURN_ON_ERROR(retVal);
 
@@ -282,8 +334,8 @@ static UpdateAndVerifyRegion(uint8_t region_number)
     /*
      * Get the location of the region 'region_number'
      */
-    flrrInData.regionnum = region_number;
-    retVal = ExecCmd(FLrr, sizeof(flrrInData), (int8_t *)&flrrInData,
+    flrrInData.RegionNum = region_number;
+    retVal = ExecCmd(FLrr, sizeof(flrrInData), (uint8_t *)&flrrInData,
                      OUTPUT_LEN_FLRR, &outdata[0]);
     RETURN_ON_ERROR(retVal);
     regAddr = (outdata[4] << 24) | (outdata[3] << 16) |
@@ -309,7 +361,7 @@ static UpdateAndVerifyRegion(uint8_t region_number)
                      TASK_RET_CODE_LEN, &outdata[0]);
     RETURN_ON_ERROR(retVal);
     /**/
-    UART_PRINT("Updating [%d] 4k chunks starting @ 0x%x \n\r", flemInData.numof4ksector, regAddr);
+    printf("Updating [%d] 4k chunks starting @ 0x%x \n\r", flemInData.numof4ksector, regAddr);
     for (idx = 0; idx < patchBundleSize / PATCH_BUNDLE_SIZE; idx++)
     {
 
@@ -327,13 +379,13 @@ static UpdateAndVerifyRegion(uint8_t region_number)
          */
         if (0 != outdata[1])
         {
-            UART_PRINT("\n\r");
-            UART_PRINT("Flash Write FAILED.!\n\r");
+            printf("\n\r");
+            printf("Flash Write FAILED.!\n\r");
             retVal = -1;
             goto error;
         }
     }
-    UART_PRINT("\n\r");
+    printf("\n\r");
     /*
      * Write is through. Now verify if the content/copy is valid
      */
@@ -342,7 +394,7 @@ static UpdateAndVerifyRegion(uint8_t region_number)
                      TASK_RET_CODE_LEN, &outdata[0]);
     if (0 != outdata[1])
     {
-        UART_PRINT("Flash Verify FAILED.!\n\r");
+        printf("Flash Verify FAILED.!\n\r");
         retVal = -1;
         goto error;
     }
@@ -354,17 +406,31 @@ error:
 static int32_t ResetPDController()
 {
     int32_t retVal = -1;
+    uint8_t fourCCcmd[4];
+
+    fourCCcmd[0] = 'G';
+    fourCCcmd[1] = 'A';
+    fourCCcmd[2] = 'I';
+    fourCCcmd[3] = 'D';
+
     /*
      * Execute GAID, and wait for reset to complete
      */
-    UART_PRINT("Waiting for device to reset\n\r");
-    ExecCmd(GAID, 0, NULL, 0, NULL);
-    Board_IF_Delay(1000);
-    retVal = ReadMode();
+    printf("Waiting for device to reset\n\r");
+    //ExecCmd(GAID, 0, NULL, 0, NULL);
+    retVal = i2c_write(REG_ADDR_CMD1, 4, fourCCcmd);
     RETURN_ON_ERROR(retVal);
-    retVal = ReadVersion();
-    RETURN_ON_ERROR(retVal);
-    retVal = ReadBootStatus();
-    RETURN_ON_ERROR(retVal);
+
+    sleep(1);
+
+    // Board_IF_Delay(1000);
+    // retVal = ReadMode();
+    // RETURN_ON_ERROR(retVal);
+    // retVal = ReadVersion();
+    // RETURN_ON_ERROR(retVal);
+    // retVal = ReadBootStatus();
+    // RETURN_ON_ERROR(retVal);
     return 0;
 }
+
+
