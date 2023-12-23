@@ -19,7 +19,7 @@ sudo i2cget -f -y 4 0x22 0
 /*--------------------------------------------------------------------------*/
 int tps_main(void);
 /*--------------------------------------------------------------------------*/
-char file_name[256];
+char file_name[256] = "flash.bin";
 /*--------------------------------------------------------------------------*/
 int main(int argc, const char *argv[])
 {
@@ -29,24 +29,30 @@ int main(int argc, const char *argv[])
 
     printf("hello\n");
 
-    if (argc != 2) {
+    if (argc != 2)
+    {
         fprintf(stderr, "Usage: %s <filename>\n", argv[0]);
-        return 1;
+        // return 1;
+    }
+    else
+    {
+        memcpy(file_name, argv[1], strlen(argv[1]));
     }
 
-    memcpy(file_name,argv[1],strlen(argv[1]));
-
-
     ret = i2c_open();
-    if(ret){
+    if (ret)
+    {
         printf("i2c open error\n");
         exit(1);
     }
 
+
+    tps_main();
+
     // ret = i2c_read(0, &value);
     // printf("i2c add 0:%02x\n",value);
 
-    // int i=0; 
+    // int i=0;
     // for(i=1;i<65;i++){
     //     data[i-1]=i+100;
     // }
@@ -59,7 +65,6 @@ int main(int argc, const char *argv[])
     // ret = i2c_read(0x0F, 4, data);
 
     // ret = i2c_read_64(0x09, data);
-
 
     i2c_close();
 }

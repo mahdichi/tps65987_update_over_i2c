@@ -141,10 +141,10 @@ s_AppContext gAppCtx;
 /*--------------------------------------------------------------------------*/
 int UpdateAndVerifyRegion(uint8_t region_number);
 /*--------------------------------------------------------------------------*/
-uint8_t tps6598x_lowregion_array[4*1024*1000];
-#define TOTAL_4kBSECTORS_FOR_PATCH  10
+uint8_t tps6598x_lowregion_array[4*(4*1024)];
+#define TOTAL_4kBSECTORS_FOR_PATCH  4
 /*--------------------------------------------------------------------------*/
-int PreOpsForFlashUpdate()
+int PreOpsForFlashUpdate(void)
 {
     s_AppContext *const pCtx = &gAppCtx;
     s_TPS_bootflag *p_bootflags = NULL;
@@ -211,7 +211,7 @@ error:
     return retVal;
 }
 /*--------------------------------------------------------------------------*/
-static int32_t StartFlashUpdate()
+int StartFlashUpdate(void)
 {
     s_AppContext *const pCtx = &gAppCtx;
     int32_t retVal = 0;
@@ -255,7 +255,12 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
     uint8_t rtnCMD[4];
     int i;
 
+    if(indata_size==64){
+    retVal = i2c_write_64(REG_ADDR_Data1, indata);
+    }
+    else{
     retVal = i2c_write(REG_ADDR_Data1, indata_size, indata);
+    }
     RETURN_ON_ERROR(retVal);
 
     if (cmd == FLrr)
@@ -403,7 +408,7 @@ error:
     return retVal;
 }
 /*--------------------------------------------------------------------------*/
-static int32_t ResetPDController()
+int ResetPDController(void)
 {
     int32_t retVal = -1;
     uint8_t fourCCcmd[4];
@@ -448,11 +453,18 @@ int tps_main(void){
         return 1;
     }
 
-    // Get the file size
+    //Get the file size
     fseek(file, 0, SEEK_END);
     file_size = ftell(file);
     rewind(file);
 
+    fread(tps6598x_lowregion_array, sizeof(char), file_size, file);
+    fclose(file);
+
+
+    PreOpsForFlashUpdate();
+    StartFlashUpdate();
+    ResetPDController();
 
 }
 /*--------------------------------------------------------------------------*/
