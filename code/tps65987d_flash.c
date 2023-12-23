@@ -2,7 +2,7 @@
 #include <stddef.h>
 
 #include "i2c_cmd.h"
-
+/*--------------------------------------------------------------------------*/
 // Provides details on PD Controller boot flags and silicon revision.
 #define REG_ADDR_BOOTFLAG 0x2D
 #define REG_LEN_BOOTFLAG 12
@@ -20,6 +20,29 @@
 
 #define DISABLE_PORT 0x3
 
+#define RETURN_ON_ERROR(x)  \
+    if (x < 0)              \
+    {                       \
+        printf("error \n"); \
+        return -1;          \
+    }
+
+#define ERR_PRINT(x) printf("error: %d\n", x)
+
+#define CONV_4CC_TO_WORD(_A_, _B_, _C_, _D_) ((_D_ << 24) | (_C_ << 16) | (_B_ << 8) | _A_)
+
+#define nCMD CONV_4CC_TO_WORD('!', 'C', 'M', 'D')
+
+#define FLrr 0
+#define FLem 1
+#define FLad 2
+#define FLwd 3
+#define FLvy 4
+
+#define OUTPUT_LEN_FLRR 4
+#define TASK_RET_CODE_LEN 1
+#define PATCH_BUNDLE_SIZE 64
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint32_t PatchHeaderErr : 1;     // Bit 0
@@ -54,7 +77,7 @@ typedef struct
     uint32_t REV_ID_REG2 : 32; // Bit 31:0
     uint32_t REV_ID_REG3 : 32; // Bit 31:0
 } s_TPS_bootflag;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint32_t TypeCStateMachine : 2;     // Bit 1:0
@@ -84,51 +107,37 @@ typedef struct
     uint32_t PowerThresAsSourceContract : 8; // Bit 7:0
     uint32_t Reserved6 : 8;                  // Bit 7:0
 } s_TPS_portconfig;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint32_t RegionNum : 1; // Bit 0
 } s_TPS_flrr;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
-    uint32_t flashaddr : 32; // Bit 31:0
+    uint32_t flashaddr : 32;    // Bit 31:0
     uint32_t numof4ksector : 8; // Bit 7:0
 } s_TPS_flem;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint32_t flashaddr : 32; // Bit 31:0
 } s_TPS_flad;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint32_t flashaddr : 32; // Bit 31:0
 } s_TPS_flvy;
-
+/*--------------------------------------------------------------------------*/
 typedef struct
 {
     uint8_t active_region;
     uint8_t inactive_region;
 } s_AppContext;
-
 s_AppContext gAppCtx;
-
-#define RETURN_ON_ERROR(x)  \
-    if (x < 0)              \
-    {                       \
-        printf("error \n"); \
-        return -1;          \
-    }
-
-#define ERR_PRINT(x) printf("error: %d\n", x)
-
-#define CONV_4CC_TO_WORD(_A_, _B_, _C_, _D_) ((_D_ << 24) | (_C_ << 16) | (_B_ << 8) | _A_)
-
-#define nCMD CONV_4CC_TO_WORD('!', 'C', 'M', 'D')
-
+/*--------------------------------------------------------------------------*/
 static UpdateAndVerifyRegion(uint8_t region_number);
-
+/*--------------------------------------------------------------------------*/
 static int32_t PreOpsForFlashUpdate()
 {
     s_AppContext *const pCtx = &gAppCtx;
@@ -195,8 +204,7 @@ static int32_t PreOpsForFlashUpdate()
 error:
     return retVal;
 }
-
-/**/
+/*--------------------------------------------------------------------------*/
 static int32_t StartFlashUpdate()
 {
     s_AppContext *const pCtx = &gAppCtx;
@@ -232,19 +240,7 @@ error:
     // SignalEvent(APP_EVENT_END_UPDATE);
     return retVal;
 }
-
-/**/
-
-#define FLrr 0
-#define FLem 1
-#define FLad 2
-#define FLwd 3
-#define FLvy 4
-
-#define OUTPUT_LEN_FLRR 4
-#define TASK_RET_CODE_LEN   1
-#define PATCH_BUNDLE_SIZE   64
-
+/*--------------------------------------------------------------------------*/
 int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_size, uint8_t *outdata)
 {
     int retVal;
@@ -276,7 +272,7 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
         fourCCcmd[1] = 'L';
         fourCCcmd[2] = 'a';
         fourCCcmd[3] = 'd';
-    }    
+    }
     else if (cmd == FLwd)
     {
         fourCCcmd[0] = 'F';
@@ -290,7 +286,7 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
         fourCCcmd[1] = 'L';
         fourCCcmd[2] = 'v';
         fourCCcmd[3] = 'y';
-    }    
+    }
     retVal = i2c_write(REG_ADDR_CMD1, 4, fourCCcmd);
     RETURN_ON_ERROR(retVal);
 
@@ -299,7 +295,7 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
     {
         event = 0;
         retVal = i2c_read(REG_ADDR_CMD1, 4, rtnCMD);
-        if (retVal <0)
+        if (retVal < 0)
         {
             return -1;
         }
@@ -310,15 +306,14 @@ int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_s
         }
     } while (!((event == 0) || (event == nCMD)));
 
-
-    //if (cmd == FLrr){
+    // if (cmd == FLrr){
     retVal = i2c_read(REG_ADDR_Data1, outdata_size, outdata);
     RETURN_ON_ERROR(retVal);
     //}
 
     return 0;
 }
-
+/*--------------------------------------------------------------------------*/
 static UpdateAndVerifyRegion(uint8_t region_number)
 {
     s_TPS_flrr flrrInData = {0};
@@ -401,8 +396,7 @@ static UpdateAndVerifyRegion(uint8_t region_number)
 error:
     return retVal;
 }
-
-/**/
+/*--------------------------------------------------------------------------*/
 static int32_t ResetPDController()
 {
     int32_t retVal = -1;
@@ -417,7 +411,7 @@ static int32_t ResetPDController()
      * Execute GAID, and wait for reset to complete
      */
     printf("Waiting for device to reset\n\r");
-    //ExecCmd(GAID, 0, NULL, 0, NULL);
+    // ExecCmd(GAID, 0, NULL, 0, NULL);
     retVal = i2c_write(REG_ADDR_CMD1, 4, fourCCcmd);
     RETURN_ON_ERROR(retVal);
 
@@ -432,5 +426,5 @@ static int32_t ResetPDController()
     // RETURN_ON_ERROR(retVal);
     return 0;
 }
-
-
+/*--------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
