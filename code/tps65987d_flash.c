@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "i2c_cmd.h"
+
 // Provides details on PD Controller boot flags and silicon revision.
 #define REG_ADDR_BOOTFLAG 0x2D
 #define REG_LEN_BOOTFLAG 12
@@ -8,7 +10,8 @@
 #define REG_ADDR_PORTCONFIG 0x28
 #define REG_LEN_PORTCONFIG 8
 
-#define REG_ADDR_CMD1 0x28
+#define REG_ADDR_CMD1 0x08
+#define REG_ADDR_Data1 0x09
 
 #define REGION_0 0
 #define REGION_1 1
@@ -84,6 +87,11 @@ typedef struct
 
 typedef struct
 {
+    uint32_t RegionNum : 1; // Bit 0
+} s_TPS_flrr;
+
+typedef struct
+{
     uint8_t active_region;
     uint8_t inactive_region;
 } s_AppContext;
@@ -96,7 +104,12 @@ s_AppContext gAppCtx;
         printf("error \n"); \
         return -1;          \
     }
+
 #define ERR_PRINT(x) printf("error: %d\n", x)
+
+#define CONV_4CC_TO_WORD(_A_, _B_, _C_, _D_) ((_D_ << 24) | (_C_ << 16) | (_B_ << 8) | _A_)
+
+#define nCMD CONV_4CC_TO_WORD('!', 'C', 'M', 'D')
 
 static UpdateAndVerifyRegion(uint8_t region_number);
 
@@ -206,8 +219,52 @@ error:
 
 /**/
 
+#define FLrr 0
+
 int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_size, uint8_t *outdata)
 {
+    int retVal;
+    uint8_t fourCCcmd[4];
+    uint32_t event = 0xFFFFFFFF;
+    uint8_t rtnCMD[4];
+    int i;
+
+    retVal = i2c_write(REG_ADDR_Data1, indata_size, indata);
+    RETURN_ON_ERROR(retVal);
+
+    if (cmd == FLrr)
+    {
+        fourCCcmd[0] = 'F';
+        fourCCcmd[1] = 'L';
+        fourCCcmd[2] = 'r';
+        fourCCcmd[3] = 'r';
+    }
+    retVal = i2c_write(REG_ADDR_CMD1, 4, fourCCcmd);
+    RETURN_ON_ERROR(retVal);
+
+    // Read Command Register
+    do
+    {
+        event = 0;
+        retVal = i2c_read(REG_ADDR_CMD1, 4, rtnCMD);
+        if (retVal <0)
+        {
+            return -1;
+        }
+        else
+        {
+            for (i = 0; i < 4; i++)
+                event |= rtnCMD[i] << (i * 8);
+        }
+    } while (!((event == 0) || (event == nCMD)));
+
+
+    //if (cmd == FLrr){
+    retVal = i2c_read(REG_ADDR_Data1, outdata_size, outdata);
+    RETURN_ON_ERROR(retVal);
+    //}
+
+    return 0;
 }
 
 static UpdateAndVerifyRegion(uint8_t region_number)
