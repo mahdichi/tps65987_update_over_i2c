@@ -2,94 +2,103 @@
 #include <stddef.h>
 
 // Provides details on PD Controller boot flags and silicon revision.
-#define REG_ADDR_BOOTFLAG   0x2D
-#define REG_LEN_BOOTFLAG    12
+#define REG_ADDR_BOOTFLAG 0x2D
+#define REG_LEN_BOOTFLAG 12
 
-#define REG_ADDR_PORTCONFIG   0x28
-#define REG_LEN_PORTCONFIG    8
+#define REG_ADDR_PORTCONFIG 0x28
+#define REG_LEN_PORTCONFIG 8
 
-#define REGION_0    0
-#define REGION_1    1
+#define REG_ADDR_CMD1 0x28
 
-#define MAX_BUF_BSIZE   64
+#define REGION_0 0
+#define REGION_1 1
 
-#define DISABLE_PORT    0x3
+#define MAX_BUF_BSIZE 64
 
-typedef struct {
-uint32_t PatchHeaderErr :1; // Bit 0
-uint32_t Reserved1 :1; // Bit 1
-uint32_t DeadBatteryFlag :1; // Bit 2
-uint32_t SpiFlashPresent :1; // Bit 3
-uint32_t Region0 :1; // Bit 4
-uint32_t Region1 :1; // Bit 5
-uint32_t Region0Invalid :1; // Bit 6
-uint32_t Region1Invalid :1; // Bit 7
-uint32_t Region0FlashErr :1; // Bit 8
-uint32_t Region1FlashErr :1; // Bit 9
-uint32_t PatchDownloadErr :1; // Bit 10
-uint32_t Reserved2 :1; // Bit 11
-uint32_t Region0CrcFail :1; // Bit 12
-uint32_t Region1CrcFail :1; // Bit 13
-uint32_t CustomerOtpInvalid :1; // Bit 14
-uint32_t reserved3 :1; // Bit 15
-uint32_t Reserved4 :1; // Bit 16
-uint32_t PP1Switch :1; // Bit 17
-uint32_t PP2Switch :1; // Bit 18
-uint32_t PP3Switch :1; // Bit 19
-uint32_t PP4Switch :1; // Bit 20
-uint32_t reserved5 :11; // Bit 31:21
+#define DISABLE_PORT 0x3
 
-uint32_t REV_ID_Metal :4; // Bit 3:0
-uint32_t REV_ID_Base :4; // Bit 7:4
-uint32_t reserved5 :24; // Bit 31:8
+typedef struct
+{
+    uint32_t PatchHeaderErr : 1;     // Bit 0
+    uint32_t Reserved1 : 1;          // Bit 1
+    uint32_t DeadBatteryFlag : 1;    // Bit 2
+    uint32_t SpiFlashPresent : 1;    // Bit 3
+    uint32_t Region0 : 1;            // Bit 4
+    uint32_t Region1 : 1;            // Bit 5
+    uint32_t Region0Invalid : 1;     // Bit 6
+    uint32_t Region1Invalid : 1;     // Bit 7
+    uint32_t Region0FlashErr : 1;    // Bit 8
+    uint32_t Region1FlashErr : 1;    // Bit 9
+    uint32_t PatchDownloadErr : 1;   // Bit 10
+    uint32_t Reserved2 : 1;          // Bit 11
+    uint32_t Region0CrcFail : 1;     // Bit 12
+    uint32_t Region1CrcFail : 1;     // Bit 13
+    uint32_t CustomerOtpInvalid : 1; // Bit 14
+    uint32_t reserved3 : 1;          // Bit 15
+    uint32_t Reserved4 : 1;          // Bit 16
+    uint32_t PP1Switch : 1;          // Bit 17
+    uint32_t PP2Switch : 1;          // Bit 18
+    uint32_t PP3Switch : 1;          // Bit 19
+    uint32_t PP4Switch : 1;          // Bit 20
+    uint32_t reserved5 : 11;         // Bit 31:21
 
-uint32_t REV_ID_REG0 :32; // Bit 31:0
-uint32_t REV_ID_REG1 :32; // Bit 31:0
-uint32_t REV_ID_REG2 :32; // Bit 31:0
-uint32_t REV_ID_REG3 :32; // Bit 31:0
+    uint32_t REV_ID_Metal : 4; // Bit 3:0
+    uint32_t REV_ID_Base : 4;  // Bit 7:4
+    uint32_t reserved5 : 24;   // Bit 31:8
+
+    uint32_t REV_ID_REG0 : 32; // Bit 31:0
+    uint32_t REV_ID_REG1 : 32; // Bit 31:0
+    uint32_t REV_ID_REG2 : 32; // Bit 31:0
+    uint32_t REV_ID_REG3 : 32; // Bit 31:0
 } s_TPS_bootflag;
 
-typedef struct {
-uint32_t TypeCStateMachine :2; // Bit 1:0
-uint32_t Reserved1 :1; // Bit 2
-uint32_t ReceptacleType :3; // Bit 5:3
-uint32_t AudioAccessorySupport :1; // Bit 6
-uint32_t DebugAccessorySupport :1; // Bit 7
-uint32_t SupportTypeCOptions :2; // Bit 9:8
-uint32_t Reserved2 :1; // Bit 10
-uint32_t VCONNsupported :2; // Bit 12:11
-uint32_t USB3rate :2; // Bit 14:13
-uint32_t Reserved3 :1; // Bit 15
-////////////////////////////////
-uint32_t VBUS_SetUvpTo4P5V :1; // Bit 0
-uint32_t VBUS_UvpTripPoint5V :3; // Bit 3:1
-uint32_t VBUS_UvpTripHV :3; // Bit 6:4
-uint32_t VBUS_OvpTripPoint :6; // Bit 12:7
-uint32_t VBUS_OvpUsage :2; // Bit 14:13
-uint32_t VBUS_HighVoltageWarningLevel :1; // Bit 15
-uint32_t VBUS_LowVoltageWarningLevel :1; // Bit 16
-uint32_t SoftStart :2; // Bit 18:17
-uint32_t Reserved4 :1; // Bit 19
-uint32_t EnableUVPDebounce :1; // Bit 20
-uint32_t Reserved5 :3; // Bit 23:21
-////////////////////////////////
-uint32_t VoltageThresAsSinkContract :8; // Bit 7:0
-uint32_t PowerThresAsSourceContract :8; // Bit 7:0
-uint32_t Reserved6 :8; // Bit 7:0
+typedef struct
+{
+    uint32_t TypeCStateMachine : 2;     // Bit 1:0
+    uint32_t Reserved1 : 1;             // Bit 2
+    uint32_t ReceptacleType : 3;        // Bit 5:3
+    uint32_t AudioAccessorySupport : 1; // Bit 6
+    uint32_t DebugAccessorySupport : 1; // Bit 7
+    uint32_t SupportTypeCOptions : 2;   // Bit 9:8
+    uint32_t Reserved2 : 1;             // Bit 10
+    uint32_t VCONNsupported : 2;        // Bit 12:11
+    uint32_t USB3rate : 2;              // Bit 14:13
+    uint32_t Reserved3 : 1;             // Bit 15
+    ////////////////////////////////
+    uint32_t VBUS_SetUvpTo4P5V : 1;            // Bit 0
+    uint32_t VBUS_UvpTripPoint5V : 3;          // Bit 3:1
+    uint32_t VBUS_UvpTripHV : 3;               // Bit 6:4
+    uint32_t VBUS_OvpTripPoint : 6;            // Bit 12:7
+    uint32_t VBUS_OvpUsage : 2;                // Bit 14:13
+    uint32_t VBUS_HighVoltageWarningLevel : 1; // Bit 15
+    uint32_t VBUS_LowVoltageWarningLevel : 1;  // Bit 16
+    uint32_t SoftStart : 2;                    // Bit 18:17
+    uint32_t Reserved4 : 1;                    // Bit 19
+    uint32_t EnableUVPDebounce : 1;            // Bit 20
+    uint32_t Reserved5 : 3;                    // Bit 23:21
+    ////////////////////////////////
+    uint32_t VoltageThresAsSinkContract : 8; // Bit 7:0
+    uint32_t PowerThresAsSourceContract : 8; // Bit 7:0
+    uint32_t Reserved6 : 8;                  // Bit 7:0
 } s_TPS_portconfig;
 
-typedef struct {
+typedef struct
+{
     uint8_t active_region;
     uint8_t inactive_region;
 } s_AppContext;
 
 s_AppContext gAppCtx;
 
-#define RETURN_ON_ERROR(x)  if(x<0) { printf("error \n"); return -1;}
-#define ERR_PRINT(x)        printf("error: %d\n",x)
+#define RETURN_ON_ERROR(x)  \
+    if (x < 0)              \
+    {                       \
+        printf("error \n"); \
+        return -1;          \
+    }
+#define ERR_PRINT(x) printf("error: %d\n", x)
 
 static UpdateAndVerifyRegion(uint8_t region_number);
-
 
 static int32_t PreOpsForFlashUpdate()
 {
@@ -119,7 +128,7 @@ static int32_t PreOpsForFlashUpdate()
     if (0 != p_bootflags->PatchHeaderErr)
     {
         ERR_PRINT(p_bootflags->PatchHeaderErr);
-        //SignalEvent(APP_EVENT_ERROR);
+        // SignalEvent(APP_EVENT_ERROR);
         retVal = 0; /* For the state-machine */
         goto error;
     }
@@ -164,7 +173,7 @@ static int32_t StartFlashUpdate()
     s_AppContext *const pCtx = &gAppCtx;
     int32_t retVal = 0;
     printf("\n\rActive Region is [%d] - Region being updated is [%d]\n\r",
-               pCtx->active_region, pCtx->inactive_region);
+           pCtx->active_region, pCtx->inactive_region);
     /*
      * Region-0 is currently active, hence update Region-1
      */
@@ -172,7 +181,7 @@ static int32_t StartFlashUpdate()
     if (0 != retVal)
     {
         printf("Region[%d] update failed.! Next boot will happen from Region[%d]\n\r",
-                   pCtx->inactive_region, pCtx->active_region);
+               pCtx->inactive_region, pCtx->active_region);
         retVal = 0;
         goto error;
     }
@@ -186,16 +195,21 @@ static int32_t StartFlashUpdate()
     {
 
         printf("Region[%d] update failed.! Next boot will happen from Region[%d]\n\r",
-                   pCtx->active_region, pCtx->inactive_region);
+               pCtx->active_region, pCtx->inactive_region);
         retVal = 0;
         goto error;
     }
 error:
-    //SignalEvent(APP_EVENT_END_UPDATE);
+    // SignalEvent(APP_EVENT_END_UPDATE);
     return retVal;
 }
 
 /**/
+
+int ExecCmd(uint8_t cmd, uint8_t indata_size, uint8_t *indata, uint8_t outdata_size, uint8_t *outdata)
+{
+}
+
 static UpdateAndVerifyRegion(uint8_t region_number)
 {
     s_TPS_flrr flrrInData = {0};
